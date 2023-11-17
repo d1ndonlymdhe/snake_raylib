@@ -45,6 +45,20 @@ public:
 		n->prev = this;
 		return n;
 	}
+	Node<T>* addNodeHere(T n) {
+		Node<T>* newNode = new Node(n);
+		if (this->next == NULL) {
+			this->next = newNode;
+		}
+		else {
+			Node<T>* currentNextNode = this->next;
+			newNode->getLast()->next = currentNextNode;
+			currentNextNode->prev = newNode;
+			this->next = newNode;
+		}
+		newNode->prev = this;
+		return newNode;
+	}
 	template<class R>
 	R run(std::function<R(Node<T>*)> func) {
 		return func(this);
@@ -132,8 +146,8 @@ typedef Node<SnakePoint> SnakeNode;
 SnakeNode CloneSnake(SnakeNode snakePoint) {
 	SnakePoint point = snakePoint.value.clone();
 	SnakeNode newSnake(point);
-	SnakeNode *newSnakeLast = &newSnake;
-	SnakeNode *next = (snakePoint.next);
+	SnakeNode* newSnakeLast = &newSnake;
+	SnakeNode* next = (snakePoint.next);
 	while (next != NULL) {
 		newSnakeLast->addNodeHere(new SnakeNode(next->value.clone()));
 		newSnakeLast = newSnakeLast->next;
@@ -194,8 +208,13 @@ void drawSnake(Node<SnakePoint> Head) {
 		currentNode = *currentNode.next;
 		if (boxHeight < 0.0f || boxWidth < 0.0f) {
 			float wSupplement = boxWidth < 0.0f ? snakeSize : 0.0f;
+			float hSupplement = boxHeight < 0.0f ? snakeSize : 0.0f;
 			float wSupplement2 = (boxWidth >= snakeSize && boxHeight == snakeSize) ? snakeSize : 0.0f;
-			DrawRectangleV(nextPos, Vector2{ abs(boxWidth) + wSupplement,abs(boxHeight) }, RED);
+			DrawRectangleV(nextPos, Vector2{ abs(boxWidth) + wSupplement,abs(boxHeight) + hSupplement }, RED);
+		}
+		else if (boxHeight == 10.0f && boxWidth == 10.0f) {
+			DrawRectangleV(currentPos, Vector2{ abs(boxWidth),abs(boxHeight) }, RED);
+
 		}
 		else {
 			float wSupplement = (boxWidth >= snakeSize && boxHeight == snakeSize) ? snakeSize : 0.0f;
@@ -285,9 +304,9 @@ Vector2 generateApple(SnakeNode& Head) {
 	} while (notSafe);
 	return genPoint;
 }
-void eatApple(SnakeNode &Head,Vector2 ApplePos) {
+void eatApple(SnakeNode& Head, Vector2 ApplePos) {
 	Head.value.pos = ApplePos;
-	SnakeNode *Tail = Head.getLast();
+	SnakeNode* Tail = Head.getLast();
 	SnakePoint& tail = Tail->value;
 	if (tail.dir == UP || tail.dir == DOWN) {
 		tail.pos.y += (tail.dir == UP) ? +snakeSize : -snakeSize;
@@ -297,12 +316,12 @@ void eatApple(SnakeNode &Head,Vector2 ApplePos) {
 	}
 }
 void drawGrid() {
-	for (auto i = 0; i < width; i+=snakeSize) {
+	for (auto i = 0; i < width; i += snakeSize) {
 		if (i % 100 == 0) {
-		DrawLine(i, 0, i, height,YELLOW);
+			DrawLine(i, 0, i, height, YELLOW);
 		}
 		else {
-			DrawLine(i, 0, i, height, ColorAlpha(YELLOW,0.7));
+			DrawLine(i, 0, i, height, ColorAlpha(YELLOW, 0.7));
 
 		}
 	}
@@ -331,12 +350,12 @@ int main() {
 		},
 		UP
 	};
-
 	Node<SnakePoint> snakePoints(Head);
-	snakePoints.addNodeHere(new SnakeNode(Tail));
+	snakePoints.addNodeHere(Tail);
 	SetTargetFPS(30);
 	bool move = true;
 	bool gameOver = false;
+	bool grid = false;
 	int points = 0;
 	Vector2 apple = generateApple(snakePoints);
 	while (!WindowShouldClose()) {
@@ -345,15 +364,20 @@ int main() {
 		drawSnake(snakePoints);
 		SnakeNode tempSnake = CloneSnake(snakePoints);
 		SnakePoint headClone = tempSnake.value.clone();
-		SnakePoint &headRef = tempSnake.value;
-		drawGrid();
+		SnakePoint& headRef = tempSnake.value;
+		if (grid) {
+			drawGrid();
+		}
+		if (IsKeyPressed(KEY_D)) {
+			grid = !grid;
+		}
 		if (headRef.dir == UP || headRef.dir == DOWN) {
 			headRef.pos.y += (headRef.dir == UP) ? snakeSize : -snakeSize;
 		}
 		else {
-			headRef.pos.x += (headRef.dir == LEFT) ?snakeSize : -snakeSize;
+			headRef.pos.x += (headRef.dir == LEFT) ? snakeSize : -snakeSize;
 		};
-		
+
 		if (isPointInsideSnake(headClone.pos, tempSnake)) {
 			gameOver = true;
 		}
@@ -393,7 +417,7 @@ int main() {
 				points++;
 			}
 		}
-	
+
 		if (snakePoints.value.pos.x < 0 || snakePoints.value.pos.x > width || snakePoints.value.pos.y <0 || snakePoints.value.pos.y > height) {
 			gameOver = true;
 		}
@@ -401,14 +425,24 @@ int main() {
 			const char* text = "Game Over";
 			int fontSize = 50;
 			int x = getTextCenterX(text, fontSize, width, 0);
-			DrawText("Game Over", x, 50, 50, BLACK);
+			DrawText(text, x, 50, fontSize, BLACK);
+			const char* text2 = "Press enter to restart";
+			x = getTextCenterX(text2, fontSize, width, 0);
+			DrawText(text2, x, 100, fontSize, BLACK);
+			if (IsKeyPressed(KEY_ENTER)) {
+				snakePoints =  SnakeNode(Head);
+				snakePoints.addNodeHere(Tail);
+				apple = generateApple(snakePoints);
+				points = 0;
+				gameOver = false;
+			}
 		}
 		{
-		std::string pointsString = std::to_string(points);
-		const char* text = pointsString.c_str();
-		int x = getTextCenterX(text, 200, width, 0);
-		int y = getTextCenterY(text, 200, height, 0);
-		DrawText(text, x, y, 200, ColorAlpha(WHITE, 0.5));
+			std::string pointsString = std::to_string(points);
+			const char* text = pointsString.c_str();
+			int x = getTextCenterX(text, 200, width, 0);
+			int y = getTextCenterY(text, 200, height, 0);
+			DrawText(text, x, y, 200, ColorAlpha(WHITE, 0.5));
 		}
 		DrawRectangleV(apple, Vector2{ 10,10 }, BLUE);
 		EndDrawing();
