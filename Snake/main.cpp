@@ -214,11 +214,11 @@ void drawSnake(Node<SnakePoint> Head) {
 		}
 		else if (boxHeight == 10.0f && boxWidth == 10.0f) {
 			DrawRectangleV(currentPos, Vector2{ abs(boxWidth),abs(boxHeight) }, RED);
-
 		}
 		else {
 			float wSupplement = (boxWidth >= snakeSize && boxHeight == snakeSize) ? snakeSize : 0.0f;
-			DrawRectangleV(currentPos, Vector2{ abs(boxWidth) + wSupplement,abs(boxHeight) }, RED);
+			//DrawRectangleV(currentPos, Vector2{ abs(boxWidth) + wSupplement,abs(boxHeight) }, RED);
+			DrawRectangleV(currentPos, Vector2{ abs(boxWidth),abs(boxHeight) }, RED);
 		}
 
 	}
@@ -312,7 +312,7 @@ void eatApple(SnakeNode& Head, Vector2 ApplePos) {
 		tail.pos.y += (tail.dir == UP) ? +snakeSize : -snakeSize;
 	}
 	else {
-		tail.pos.x += (tail.dir == RIGHT) ? +snakeSize : -snakeSize;
+		tail.pos.x += (tail.dir == LEFT) ? +snakeSize : -snakeSize;
 	}
 }
 void drawGrid() {
